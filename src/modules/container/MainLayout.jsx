@@ -13,35 +13,20 @@ import Badge from '@material-ui/core/Badge';
 import Container from '@material-ui/core/Container';
 import Grid from '@material-ui/core/Grid';
 import Paper from '@material-ui/core/Paper';
-import Link from '@material-ui/core/Link';
 import MenuIcon from '@material-ui/icons/Menu';
 import ChevronLeftIcon from '@material-ui/icons/ChevronLeft';
 import NotificationsIcon from '@material-ui/icons/Notifications';
-import { mainListItems, secondaryListItems } from './listItems';
-import Chart from './Chart';
-import Deposits from './Deposits';
-import Orders from './Orders';
+import mainListItems from './ListItems';
+import Ymap from '../item/YandexMaps';
 
-function MadeWithLove() {
-  return (
-    <Typography variant="body2" color="textSecondary" align="center">
-      {'Built with love by the '}
-      <Link color="inherit" href="https://material-ui.com/">
-        Material-UI
-      </Link>
-      {' team.'}
-    </Typography>
-  );
-}
 
 const drawerWidth = 240;
-
-const useStyles = makeStyles(theme => ({
+export const useStyles = makeStyles(theme => ({
   root: {
     display: 'flex',
   },
   toolbar: {
-    paddingRight: 24, // keep right padding when drawer closed
+    paddingRight: 24,
   },
   toolbarIcon: {
     display: 'flex',
@@ -111,12 +96,12 @@ const useStyles = makeStyles(theme => ({
     flexDirection: 'column',
   },
   fixedHeight: {
-    height: 240,
+    height: 600,
   },
 }));
 
 export default function Dashboard() {
-  const classes = useStyles();
+    const classes = useStyles();
   const [open, setOpen] = React.useState(true);
   const handleDrawerOpen = () => {
     setOpen(true);
@@ -141,7 +126,7 @@ export default function Dashboard() {
             <MenuIcon />
           </IconButton>
           <Typography component="h1" variant="h6" color="inherit" noWrap className={classes.title}>
-            Dashboard
+            Ymaps
           </Typography>
           <IconButton color="inherit">
             <Badge badgeContent={4} color="secondary">
@@ -164,34 +149,18 @@ export default function Dashboard() {
         </div>
         <Divider />
         <List>{mainListItems}</List>
-        <Divider />
-        <List>{secondaryListItems}</List>
       </Drawer>
       <main className={classes.content}>
         <div className={classes.appBarSpacer} />
         <Container maxWidth="lg" className={classes.container}>
-          <Grid container spacing={3}>
-            {/* Chart */}
-            <Grid item xs={12} md={8} lg={9}>
+          <Grid container>
+            <Grid item xs={12} md={12} lg={12}>
               <Paper className={fixedHeightPaper}>
-                <Chart />
-              </Paper>
-            </Grid>
-            {/* Recent Deposits */}
-            <Grid item xs={12} md={4} lg={3}>
-              <Paper className={fixedHeightPaper}>
-                <Deposits />
-              </Paper>
-            </Grid>
-            {/* Recent Orders */}
-            <Grid item xs={12}>
-              <Paper className={classes.paper}>
-                <Orders />
+                <Ymap />
               </Paper>
             </Grid>
           </Grid>
         </Container>
-        <MadeWithLove />
       </main>
     </div>
   );
