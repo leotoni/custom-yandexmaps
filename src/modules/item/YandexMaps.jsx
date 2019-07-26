@@ -1,5 +1,5 @@
 import React, { Fragment } from 'react';
-import { Map } from 'react-yandex-maps';
+import { Map, Placemark, YMaps } from 'react-yandex-maps';
 import TextField from '@material-ui/core/TextField';
 import axios from 'axios';
 import unicid from 'uniqid';
@@ -43,23 +43,26 @@ const styles = {
   },
 };
 
-function init(func) {
+function init(func, func2) {
   if (typeof func === 'function') document.addEventListener('click', func, false);
+  if (typeof func2 === 'function') document.addEventListener('keydown', func2, false);
 }
 
-const PacItem = (elem, handleChange) => {
+const PacItem = (elem, handleSelect, active) => {
   const { name = '',
     description = '',
     CompanyMetaData = '' } = elem.properties;
   const { Categories = [] } = CompanyMetaData;
   const cat = (Categories.length > 0 && Categories.map(e => e.name).join(',')) || '';
+  const style = (!active && styles.pacItem) || { backgroundColor: '#69afe5', ...styles.pacItem };
   return (
     <div
       key={unicid()}
-      style={styles.pacItem}
+      className="pac-item"
+      style={style}
       onClick={() => {
-        console.log('work');
-        handleChange(`${name},${cat}`)}}
+        handleSelect(`${name}, ${cat}`);
+      }}
     >
       <span style={styles.pacItemQuery}>
         <span style={styles.pacMatched}>
@@ -79,14 +82,16 @@ const PacItem = (elem, handleChange) => {
 };
 
 class YandexMaps extends React.Component {
-  state={
+  state = {
     text: '',
     elements: [],
+    indexActive: -1,
+    cord: '',
     isOpen: false,
   };
 
   componentDidMount() {
-    init(() => this.setState({ isOpen: false }));
+    init(() => this.setState({ isOpen: false }), this.handleKeyDown);
   }
 
   getData() {
@@ -97,13 +102,37 @@ class YandexMaps extends React.Component {
       });
   }
 
-  handleChange = (e) => {
-    console.log('work', e);
-    this.setState({ text: e, isOpen: false });
-  }
+  handleKeyDown = (e) => {
+    const UP = 38;
+    const DOWN = 40;
+    const ENTER = 13;
+    const { indexActive, elements, isOpen } = this.state;
+    if (!isOpen) return;
+    if (e.keyCode === UP && indexActive >= 0) {
+      this.setState({ indexActive: indexActive - 1 });
+    }
+    if (e.keyCode === DOWN && indexActive < 10) {
+      this.setState({ indexActive: indexActive + 1 });
+    }
+    if (e.keyCode === ENTER) {
+      const elem = elements && elements[indexActive];
+      if (!elem) return;
+      console.log('elem', elem);
+      const { name = '', CompanyMetaData = '' } = elem.properties;
+      const { Categories = [] } = CompanyMetaData;
+      const cat = (Categories.length > 0 && Categories.map(c => c.name).join(',')) || '';
+      this.setState({
+        cord: elem.geometry.coordinates, text: `${name}, ${cat}`, indexActive: -1, isOpen: false,
+      });
+    }
+  };
+
+  handleSelect = (e) => {;
+    this.setState({ text: e, indexActive: -1, isOpen: false });
+  };
 
   render() {
-    const { elements } = this.state;
+    const { elements, indexActive, cord } = this.state;
     return (
       <Fragment>
         <div style={{ height: '15%' }}>
@@ -118,16 +147,16 @@ class YandexMaps extends React.Component {
           />
         </div>
         <div style={{ width: '100%', height: '85%' }}>
-          <Map
-            width="100%"
-            height="100%"
-            defaultState={{ center: [57.12, 65.5], zoom: 12 }}
-          />
+          <YMaps>
+            <Map style={{ width: '100%', height: '100%' }} defaultState={{ center: [57.12, 65.52], zoom: 12 }}>
+              <Placemark geometry={(cord && cord) || [57.12, 65.52]} />
+            </Map>
+          </YMaps>
         </div>
         {this.state.isOpen && elements.length > 0 && (
-        <div style={styles.pacContainer}>
-            {elements.map(e => PacItem(e, this.handleChange))}
-        </div>
+          <div style={styles.pacContainer}>
+            {elements.map((e, i) => PacItem(e, this.handleSelect, i === indexActive))}
+          </div>
         )}
       </Fragment>
     );
