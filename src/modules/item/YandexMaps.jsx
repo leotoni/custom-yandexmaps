@@ -1,18 +1,17 @@
 import React, { Fragment } from 'react';
 import { Map, Placemark, YMaps } from 'react-yandex-maps';
 import TextField from '@material-ui/core/TextField';
-import axios from 'axios';
 import unicid from 'uniqid';
+import axios from 'axios';
+import DetailedItem from './DetailedItem';
+import SelectItem from './SelectItem';
 
 const styles = {
-  root: {
-    display: 'flex',
-  },
   pacContainer: {
     margin: '0px 5px 0px 5px',
-    backgroundColor: '#fff',
     maxWidth: '90%',
     width: 'auto',
+    minWidth: '500px',
     top: '185px',
     position: 'absolute',
     zIndex: '1000',
@@ -21,72 +20,20 @@ const styles = {
     fontFamily: 'Arial,sans-serif',
     boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
   },
-  pacItem: {
-    cursor: 'pointer',
-    padding: '0 4px',
-    textOverflow: 'ellipsis',
-    overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    lineHeight: '30px',
-    textAlign: 'left',
-    borderTop: '1px solid #e6e6e6',
-    fontSize: '11px',
-    color: '#999',
-  },
-  pacItemQuery: {
-    fontSize: '13px',
-    paddingRight: '3px',
-    color: '#000',
-  },
-  pacMatched: {
-    fontWeight: '700',
-  },
 };
+
 
 function init(func, func2) {
   if (typeof func === 'function') document.addEventListener('click', func, false);
   if (typeof func2 === 'function') document.addEventListener('keydown', func2, false);
 }
 
-const PacItem = (elem, handleSelect, active) => {
-  const { name = '',
-    description = '',
-    CompanyMetaData = '' } = elem.properties;
-  const { Categories = [] } = CompanyMetaData;
-  const cat = (Categories.length > 0 && Categories.map(e => e.name).join(',')) || '';
-  const style = (!active && styles.pacItem) || { backgroundColor: '#69afe5', ...styles.pacItem };
-  return (
-    <div
-      key={unicid()}
-      className="pac-item"
-      style={style}
-      onClick={() => {
-        handleSelect(`${name}, ${cat}`);
-      }}
-    >
-      <span style={styles.pacItemQuery}>
-        <span style={styles.pacMatched}>
-          {`${name} `}
-        </span>
-      </span>
-      <span>
-        {cat}
-      </span>
-      <div>
-        <span style={styles.pacItemQuery}>
-          {description}
-        </span>
-      </div>
-    </div>
-  );
-};
-
 class YandexMaps extends React.Component {
   state = {
+    org: '',
     text: '',
     elements: [],
     indexActive: -1,
-    cord: '',
     isOpen: false,
   };
 
@@ -95,7 +42,7 @@ class YandexMaps extends React.Component {
   }
 
   getData() {
-    const url = `https://search-maps.yandex.ru/v1/?text=Тюмень,${this.state.text}&type=biz&lang=ru_RU&apikey=f7c98cb2-11c0-4f5b-bd27-a3cca8c31583`;
+    const url = `https://search-maps.yandex.ru/v1/?text=Тюмень,${this.state.text}&type=biz&lang=ru_RU&apikey=ba499814-4c73-461a-ab9c-2b528677ce39`;
     axios.get(url)
       .then((resp) => {
         this.setState({ elements: resp.data.features, isOpen: true });
@@ -117,25 +64,32 @@ class YandexMaps extends React.Component {
     if (e.keyCode === ENTER) {
       const elem = elements && elements[indexActive];
       if (!elem) return;
-      console.log('elem', elem);
       const { name = '', CompanyMetaData = '' } = elem.properties;
       const { Categories = [] } = CompanyMetaData;
       const cat = (Categories.length > 0 && Categories.map(c => c.name).join(',')) || '';
       this.setState({
-        cord: elem.geometry.coordinates, text: `${name}, ${cat}`, indexActive: -1, isOpen: false,
+        org: elem, text: `${name}, ${cat}`, indexActive: -1, isOpen: false,
       });
     }
   };
 
-  handleSelect = (e) => {;
-    this.setState({ text: e, indexActive: -1, isOpen: false });
+  handleSelect = (e, org) => {
+    this.setState({
+      org, text: e, indexActive: -1, isOpen: false,
+    });
   };
 
   render() {
-    const { elements, indexActive, cord } = this.state;
+    const { elements, indexActive, org } = this.state;
+    const lat = org && org.geometry.coordinates[1];
+    const long = org && org.geometry.coordinates[0];
+    const state = {
+      center: (org && [lat, long]) || [57.12, 65.52],
+      zoom: (org && 14) || 12,
+    };
     return (
       <Fragment>
-        <div style={{ height: '15%' }}>
+        <div style={{ height: '10%' }}>
           <TextField
             style={{ width: '100%' }}
             id="outlined-name"
@@ -148,14 +102,27 @@ class YandexMaps extends React.Component {
         </div>
         <div style={{ width: '100%', height: '85%' }}>
           <YMaps>
-            <Map style={{ width: '100%', height: '100%' }} defaultState={{ center: [57.12, 65.52], zoom: 12 }}>
-              <Placemark geometry={(cord && cord) || [57.12, 65.52]} />
+            <Map
+              style={{ width: '100%', height: '100%', zIndex: '11' }}
+              state={state}
+            >
+              <Placemark
+                geometry={(org && [lat, long]) || []}
+              />
             </Map>
+            {org && (<DetailedItem org={org} close={() => this.setState({ org: '' })} />)}
           </YMaps>
         </div>
         {this.state.isOpen && elements.length > 0 && (
           <div style={styles.pacContainer}>
-            {elements.map((e, i) => PacItem(e, this.handleSelect, i === indexActive))}
+            {elements.map((e, i) => (
+              <SelectItem
+                key={unicid()}
+                elem={e}
+                handleSelect={this.handleSelect}
+                active={i === indexActive}
+              />
+            ))}
           </div>
         )}
       </Fragment>
