@@ -1,6 +1,6 @@
 
 
-## Пример яндекс карт со своим ui
-## демо https://dqfcn.csb.app
+## custom ymaps 
+## demo: https://dqfcn.csb.app
 
 ![alt text](ymaps.jpg)
